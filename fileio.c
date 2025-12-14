@@ -1,4 +1,6 @@
 /*
+** 1) Initial version of this file has this copyright notice:
+**
 ** 2014-06-13
 **
 ** The author disclaims copyright to this source code.  In place of
@@ -7,6 +9,24 @@
 **    May you do good and not evil.
 **    May you find forgiveness for yourself and forgive others.
 **    May you share freely, never taking more than you give.
+**
+** 2) copyright notice for the modifications introduced in this fork:
+**
+**     Copyright 2025 by Andrea Rossetti <andrear1979@hotmail.com>
+**
+** 	   This code is free software: you can redistribute it and/or modify
+**     it under the terms of the GNU Lesser General Public License as published by
+**     the Free Software Foundation, either version 2.1 of the License, or
+**     (at your option) any later version.
+**
+**     This program is distributed in the hope that it will be useful,
+**     but WITHOUT ANY WARRANTY; without even the implied warranty of
+**     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**     GNU Lesser General Public License for more details.
+**
+**     You should have received a copy of the GNU Lesser General Public License
+**     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+**
 **
 ******************************************************************************
 **
@@ -95,8 +115,10 @@ SQLITE_EXTENSION_INIT1
 #  include <sys/time.h>
 #  define STRUCT_STAT struct stat
 #else
-#  include "windirent.h"
+#  include "windows.h"
+#  include <io.h>
 #  include <direct.h>
+#  include <dirent.h>
 #  define STRUCT_STAT struct _stat
 #  define chmod(path,mode) fileio_chmod(path,mode)
 #  define mkdir(path,mode) fileio_mkdir(path)
@@ -558,9 +580,12 @@ static void writefileFunc(
   }
 
   if( argc>2 && res!=0 ){
+#if !defined(_WIN32) && !defined(WIN32)
     if( S_ISLNK(mode) ){
       ctxErrorMsg(context, "failed to create symlink: %s", zFile);
-    }else if( S_ISDIR(mode) ){
+    } else
+#endif 
+    if( S_ISDIR(mode) ){
       ctxErrorMsg(context, "failed to create directory: %s", zFile);
     }else{
       ctxErrorMsg(context, "failed to write file: %s", zFile);
@@ -583,9 +608,12 @@ static void lsModeFunc(
   int iMode = sqlite3_value_int(argv[0]);
   char z[16];
   (void)argc;
+#if !defined(_WIN32) && !defined(WIN32)
   if( S_ISLNK(iMode) ){
     z[0] = 'l';
-  }else if( S_ISREG(iMode) ){
+  }else
+#endif
+  if( S_ISREG(iMode) ){
     z[0] = '-';
   }else if( S_ISDIR(iMode) ){
     z[0] = 'd';
