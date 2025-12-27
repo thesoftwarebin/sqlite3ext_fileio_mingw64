@@ -2,9 +2,24 @@
 This is a modified version of SQLite's `fileio` DLL extension, so that it compiles in Windows under MinGW64.
 
 While `fileio` extension is compiled in the SQLite **shell** (`sqlite3.exe`), it's not part of the basic SQLite **DLL**.
-This means that SQL functions `READFILE` and `WRITEFILE` are not available by default in your C program if you just link against a stock SQLite DLL.
+This means that SQL functions `READFILE` and `WRITEFILE` are not available by default in your C program, this code will fail at runtime:
 
-This version of `fileio.dll` comes to the rescue, see `testfileio.c` for how a barebones example of how to load and use the extension.
+```.c
+  char* sql = "select length(readfile('./testfileio.exe')) as length_of_file";
+  sqlite3_exec(db, sql, printCallback, NULL, NULL);
+```
+
+This version of `fileio.dll` comes to the rescue, just prepend two configuration lines right after the database opening:
+
+```.c
+  sqlite3_enable_load_extension(db, 1 /*int onoff*/);
+  sqlite3_load_extension(db, "fileio", 0, 0);
+
+  char* sql = "select length(readfile('./testfileio.exe')) as length_of_file";
+  sqlite3_exec(db, sql, printCallback, NULL, NULL);
+```
+
+See `testfileio.c` for a complete example.
 
 # Fork history
 
